@@ -1668,7 +1668,7 @@ async function mgmtHandleRequest(request, env, ctx) {
                     const protocols = typeof user.protocols === 'string' ? JSON.parse(user.protocols || '{}') : (user.protocols || {});
                     const configs = [];
                     const host = url.hostname;
-                    const port = '443';
+                    const defaultPorts = ['443', '2053', '2096'];
 
                     // Build remark info for dummy nodes
                     const expireStr = user.expires_at ? user.expires_at.split(' ')[0] : 'Unlimited';
@@ -1702,11 +1702,17 @@ async function mgmtHandleRequest(request, env, ctx) {
                         : 4102329600;
                     const subUserinfo = `upload=0; download=${usedBytes}; total=${maxBytes}; expire=${expireUnix}`;
 
-                    if (protocols.vless !== false) {
-                        configs.push(`vless://${user.uuid}@${host}:${port}?encryption=none&security=tls&type=ws&path=%2F${user.uuid}%3D%3D#ShadowVPN 🛡️ - ${user.username || 'user'}`);
-                    }
-                    if (protocols.trojan !== false) {
-                        configs.push(`trojan://${user.uuid}@${host}:${port}?security=tls&type=ws&path=%2F${user.uuid}%3D%3D#ShadowVPN 🛡️ - ${user.username || 'user'}`);
+                    // Anti-DPI parameters (fragmentation + custom cipher suites)
+                    const antiDpiParams = "&fp=unsafe&cs=TLS_AES_256_GCM_SHA384%3ATLS_CHACHA20_POLY1305_SHA256%3ATLS_AES_128_GCM_SHA256%3ATLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384%3ATLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384%3ATLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256%3ATLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256%3ATLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256%3ATLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256%3ATLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA%3ATLS_ECDHE_RSA_WITH_AES_256_CBC_SHA%3ATLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256%3ATLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&fm=%7B%22tcp%22%3A%20%5B%7B%22type%22%3A%20%22fragment%22%2C%20%22settings%22%3A%20%7B%22packets%22%3A%20%22tlshello%22%2C%20%22lengths%22%3A%20%5B%225%22%2C%20%2294%22%2C%20%221%22%5D%2C%20%22delays%22%3A%20%5B%220%22%5D%2C%20%22maxSplit%22%3A%20%220%22%7D%7D%2C%7B%22type%22%3A%20%22fragment%22%2C%20%22settings%22%3A%20%7B%22packets%22%3A%20%221-1%22%2C%20%22lengths%22%3A%20%5B%22109%22%2C%20%221%22%5D%2C%20%22delays%22%3A%20%5B%221%22%5D%2C%20%22maxSplit%22%3A%20%22355%22%7D%7D%5D%7D";
+
+                    // Default host configs — one config per port to prevent client deduplication
+                    for (const port of defaultPorts) {
+                        if (protocols.vless !== false) {
+                            configs.push(`vless://${user.uuid}@${host}:${port}?encryption=none&security=tls&type=ws&path=%2F${user.uuid}%3D%3D${antiDpiParams}#ShadowVPN 🛡️ - ${user.username || 'user'} (${port})`);
+                        }
+                        if (protocols.trojan !== false) {
+                            configs.push(`trojan://${user.uuid}@${host}:${port}?security=tls&type=ws&path=%2F${user.uuid}%3D%3D${antiDpiParams}#ShadowVPN 🛡️ - ${user.username || 'user'} (${port})`);
+                        }
                     }
 
                     // Add Clean IP configs
@@ -1718,10 +1724,10 @@ async function mgmtHandleRequest(request, env, ctx) {
                             const cPort = c.port || 443;
                             const cSni = c.sni || host;
                             if (protocols.vless !== false) {
-                                configs.push(`vless://${user.uuid}@${cHost}:${cPort}?encryption=none&security=tls&type=ws&path=%2F${user.uuid}%3D%3D&sni=${cSni}#ShadowVPN 🛡️ - ${user.username || 'user'}`);
+                                configs.push(`vless://${user.uuid}@${cHost}:${cPort}?encryption=none&security=tls&type=ws&path=%2F${user.uuid}%3D%3D&sni=${cSni}${antiDpiParams}#ShadowVPN 🛡️ - ${user.username || 'user'}`);
                             }
                             if (protocols.trojan !== false) {
-                                configs.push(`trojan://${user.uuid}@${cHost}:${cPort}?security=tls&type=ws&path=%2F${user.uuid}%3D%3D&sni=${cSni}#ShadowVPN 🛡️ - ${user.username || 'user'}`);
+                                configs.push(`trojan://${user.uuid}@${cHost}:${cPort}?security=tls&type=ws&path=%2F${user.uuid}%3D%3D&sni=${cSni}${antiDpiParams}#ShadowVPN 🛡️ - ${user.username || 'user'}`);
                             }
                         }
                     } catch (_) { /* ignore clean IP errors */ }
