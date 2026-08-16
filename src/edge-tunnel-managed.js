@@ -175,7 +175,7 @@ async function mgmtValidateUUID(env, uuid, clientIP, protocol) {
 			if (!existing) {
 				// New subnet — check if we have room
 				const deviceCount = await env.DB.prepare(
-					'SELECT COUNT(DISTINCT subnet) as cnt FROM active_connections WHERE user_id = ?'
+					'SELECT COUNT(DISTINCT subnet) as cnt FROM active_connections WHERE user_id = ? AND last_activity >= datetime("now", "-5 minutes")'
 				).bind(user.id).first();
 				if (deviceCount && deviceCount.cnt >= user.max_connections) {
 					return false;
@@ -205,6 +205,8 @@ async function mgmtAddActiveConnection(env, uuid, connectionId, ipAddress, proto
 		await env.DB.prepare(
 			'INSERT INTO active_connections (user_id, connection_id, ip_address, subnet, protocol) VALUES (?, ?, ?, ?, ?)'
 		).bind(user.id, connectionId, ip, subnet, proto).run();
+		// Passive cleanup of stale connections on every new connection
+		mgmtCleanupStaleConnections(env).catch(() => {});
 		// Update current_connections = number of distinct subnets (devices) for this user
 		await env.DB.prepare(
 			'UPDATE users SET current_connections = (SELECT COUNT(DISTINCT subnet) FROM active_connections WHERE user_id = ?) WHERE id = ?'
@@ -258,7 +260,7 @@ async function mgmtCleanupStaleConnections(env) {
 		if (result.changes > 0) {
 			// Update current_connections = distinct subnets for all users
 			await env.DB.prepare(
-				'UPDATE users SET current_connections = (SELECT COUNT(DISTINCT subnet) FROM active_connections WHERE user_id = users.id)'
+				'UPDATE users SET current_connections = (SELECT COUNT(DISTINCT subnet) FROM active_connections WHERE user_id = users.id AND last_activity >= datetime("now", "-5 minutes"))'
 			).run();
 			console.log(`[CLEANUP] Removed ${result.changes} stale connections`);
 		}
