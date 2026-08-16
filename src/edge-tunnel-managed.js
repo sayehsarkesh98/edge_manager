@@ -1705,17 +1705,17 @@ async function mgmtHandleRequest(request, env, ctx) {
                     // Anti-DPI parameters (fragmentation + custom cipher suites)
                     const antiDpiParams = "&fp=unsafe&cs=TLS_AES_256_GCM_SHA384%3ATLS_CHACHA20_POLY1305_SHA256%3ATLS_AES_128_GCM_SHA256%3ATLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384%3ATLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384%3ATLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256%3ATLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256%3ATLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256%3ATLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256%3ATLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA%3ATLS_ECDHE_RSA_WITH_AES_256_CBC_SHA%3ATLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256%3ATLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&fm=%7B%22tcp%22%3A%20%5B%7B%22type%22%3A%20%22fragment%22%2C%20%22settings%22%3A%20%7B%22packets%22%3A%20%22tlshello%22%2C%20%22lengths%22%3A%20%5B%225%22%2C%20%2294%22%2C%20%221%22%5D%2C%20%22delays%22%3A%20%5B%220%22%5D%2C%20%22maxSplit%22%3A%20%220%22%7D%7D%2C%7B%22type%22%3A%20%22fragment%22%2C%20%22settings%22%3A%20%7B%22packets%22%3A%20%221-1%22%2C%20%22lengths%22%3A%20%5B%22109%22%2C%20%221%22%5D%2C%20%22delays%22%3A%20%5B%221%22%5D%2C%20%22maxSplit%22%3A%20%22355%22%7D%7D%5D%7D";
 
-                    // Default host configs — one config per port to prevent client deduplication
+                    // ===== NORMAL CONFIGS (always generated, NO antiDpiParams) =====
+                    // Default host - Normal configs (all 3 ports)
                     for (const port of defaultPorts) {
                         if (protocols.vless !== false) {
-                            configs.push(`vless://${user.uuid}@${host}:${port}?encryption=none&security=tls&type=ws&path=%2F${user.uuid}%3D%3D${antiDpiParams}#ShadowVPN 🛡️ - ${user.username || 'user'} (${port})`);
+                            configs.push(`vless://${user.uuid}@${host}:${port}?encryption=none&security=tls&type=ws&path=%2F${user.uuid}%3D%3D#ShadowVPN 🛡️ - ${user.username || 'user'} (Normal - ${port})`);
                         }
                         if (protocols.trojan !== false) {
-                            configs.push(`trojan://${user.uuid}@${host}:${port}?security=tls&type=ws&path=%2F${user.uuid}%3D%3D${antiDpiParams}#ShadowVPN 🛡️ - ${user.username || 'user'} (${port})`);
+                            configs.push(`trojan://${user.uuid}@${host}:${port}?security=tls&type=ws&path=%2F${user.uuid}%3D%3D#ShadowVPN 🛡️ - ${user.username || 'user'} (Normal - ${port})`);
                         }
                     }
-
-                    // Add Clean IP configs
+                    // Clean IPs - Normal configs (no port in remark, use c.name)
                     try {
                         const cleanResult = await env.DB.prepare('SELECT * FROM clean_ips WHERE is_active = 1 ORDER BY sort_order ASC, id ASC').all();
                         const cleanIPs = cleanResult.results || [];
@@ -1724,13 +1724,26 @@ async function mgmtHandleRequest(request, env, ctx) {
                             const cPort = c.port || 443;
                             const cSni = c.sni || host;
                             if (protocols.vless !== false) {
-                                configs.push(`vless://${user.uuid}@${cHost}:${cPort}?encryption=none&security=tls&type=ws&path=%2F${user.uuid}%3D%3D&sni=${cSni}${antiDpiParams}#ShadowVPN 🛡️ - ${user.username || 'user'}`);
+                                configs.push(`vless://${user.uuid}@${cHost}:${cPort}?encryption=none&security=tls&type=ws&path=%2F${user.uuid}%3D%3D&sni=${cSni}#ShadowVPN 🛡️ - ${user.username || 'user'} (${c.name})`);
                             }
                             if (protocols.trojan !== false) {
-                                configs.push(`trojan://${user.uuid}@${cHost}:${cPort}?security=tls&type=ws&path=%2F${user.uuid}%3D%3D&sni=${cSni}${antiDpiParams}#ShadowVPN 🛡️ - ${user.username || 'user'}`);
+                                configs.push(`trojan://${user.uuid}@${cHost}:${cPort}?security=tls&type=ws&path=%2F${user.uuid}%3D%3D&sni=${cSni}#ShadowVPN 🛡️ - ${user.username || 'user'} (${c.name})`);
                             }
                         }
                     } catch (_) { /* ignore clean IP errors */ }
+
+                    // ===== ANTI-FILTER CONFIGS (only if toggle enabled, WITH antiDpiParams) =====
+                    if (protocols.anti_filter === true) {
+                        const antiFilterPorts = ['443', '2053'];
+                        for (const port of antiFilterPorts) {
+                            if (protocols.vless !== false) {
+                                configs.push(`vless://${user.uuid}@${host}:${port}?encryption=none&security=tls&type=ws&path=%2F${user.uuid}%3D%3D${antiDpiParams}#ShadowVPN 🛡️ - ${user.username || 'user'} (Anti-Filter - ${port})🚀`);
+                            }
+                            if (protocols.trojan !== false) {
+                                configs.push(`trojan://${user.uuid}@${host}:${port}?security=tls&type=ws&path=%2F${user.uuid}%3D%3D${antiDpiParams}#ShadowVPN 🛡️ - ${user.username || 'user'} (Anti-Filter - ${port})🚀`);
+                            }
+                        }
+                    }
 
                     // Return as subscription (one config per line)
                     return new Response(configs.join('\n'), {
@@ -2337,10 +2350,16 @@ function mgmtAdminHTML() {
                     <label>آیدی تلگرام</label>
                     <input type="text" id="newTelegramId" placeholder="اختیاری">
                 </div>
-                <div class="form-group">
-                    <label>یادداشت</label>
-                    <input type="text" id="newNotes" placeholder="اختیاری">
-                </div>
+            <div class="form-group">
+                <label>یادداشت</label>
+                <input type="text" id="newNotes">
+            </div>
+            <div class="form-group">
+                <label>کانفیگ‌های ضد فیلتر</label>
+                <select id="newAntiFilter">
+                    <option value="0">غیرفعال</option>
+                    <option value="1">فعال</option>
+                </select>
             </div>
             <div style="display:flex; gap:0.5rem;">
                 <button class="btn btn-primary" onclick="doCreateUser()" style="flex:1">ایجاد کاربر</button>
@@ -2399,6 +2418,16 @@ function mgmtAdminHTML() {
                     <select id="editIsFrozen">
                         <option value="0">عادی</option>
                         <option value="1">فریز شده</option>
+                    </select>
+                </div>
+                <div class="form-group"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>کانفیگ‌های ضد فیلتر</label>
+                    <select id="editAntiFilter">
+                        <option value="0">غیرفعال</option>
+                        <option value="1">فعال</option>
                     </select>
                 </div>
                 <div class="form-group"></div>
@@ -2754,7 +2783,8 @@ function mgmtAdminHTML() {
                         expires_at: document.getElementById('newExpiry').value || null,
                         plan_id: document.getElementById('newPlan').value || null,
                         telegram_id: document.getElementById('newTelegramId').value || '',
-                        notes: document.getElementById('newNotes').value || ''
+                        notes: document.getElementById('newNotes').value || '',
+                        protocols: { vless: true, trojan: true, anti_filter: document.getElementById('newAntiFilter').value === '1' }
                     })
                 });
                 hideCreateModal();
@@ -2814,10 +2844,12 @@ function mgmtAdminHTML() {
                     document.getElementById('editMaxConn').value = u.max_connections || 1;
                     document.getElementById('editMaxBandwidth').value = u.max_bandwidth_bytes ? (u.max_bandwidth_bytes / (1024*1024*1024)).toFixed(1) : 0;
                     document.getElementById('editExpiry').value = u.expires_at ? u.expires_at.split(' ')[0].split('T')[0] : '';
-                    document.getElementById('editIsActive').value = u.is_active;
+                    document.getElementById('editIsActive').value = u.is_active ? '1' : '0';
                     document.getElementById('editTelegramId').value = u.telegram_id || '';
                     document.getElementById('editNotes').value = u.notes || '';
                     document.getElementById('editIsFrozen').value = u.is_frozen ? '1' : '0';
+                    const protos = (typeof u.protocols === 'string' ? JSON.parse(u.protocols || '{}') : (u.protocols || {}));
+                    document.getElementById('editAntiFilter').value = protos.anti_filter ? '1' : '0';
                     if (u.plan_id) {
                         document.getElementById('editPlan').value = u.plan_id;
                     }
@@ -2863,7 +2895,8 @@ function mgmtAdminHTML() {
                 plan_id: document.getElementById('editPlan').value || null,
                 telegram_id: document.getElementById('editTelegramId').value || '',
                 notes: document.getElementById('editNotes').value || '',
-                is_frozen: parseInt(document.getElementById('editIsFrozen').value)
+                is_frozen: parseInt(document.getElementById('editIsFrozen').value),
+                protocols: { vless: true, trojan: true, anti_filter: document.getElementById('editAntiFilter').value === '1' }
             };
 
             try {
