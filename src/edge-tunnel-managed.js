@@ -1973,7 +1973,7 @@ function mgmtAdminHTML() {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: linear-gradient(135deg, #0f172a, #1e1b4b, #0f172a); background-size: 200% 200%; animation: gradientBG 15s ease infinite; color: var(--text-primary); min-height: 100vh; }
 @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-.login-form, .panel, .stat, .modal-content, .header, .nav { background: rgba(30, 41, 59, 0.4) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.login-form, .panel, .stat, .modal-content, .header, .nav { background: rgba(30, 41, 59, 0.4) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1) !important; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
 
         /* Login */
         .login-box { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -2007,12 +2007,15 @@ function mgmtAdminHTML() {
         .stat .val.danger { color: var(--danger); }
 
         /* Buttons */
-        .btn { padding: 0.5rem 1rem; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; margin: 0.25rem; transition: all 0.2s; }
-        .btn-primary { background: var(--accent); color: white; }
-        .btn-primary:hover { background: var(--accent-hover); }
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-warning { background: var(--warning); color: white; }
+        .btn { padding: 0.6rem 1.2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; margin: 0.25rem; transition: all 0.2s; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        .btn-primary { background: linear-gradient(135deg, rgba(59,130,246,0.8), rgba(37,99,235,0.9)); color: white; box-shadow: 0 0 15px rgba(59,130,246,0.4); }
+        .btn-primary:hover { background: linear-gradient(135deg, rgba(59,130,246,1), rgba(37,99,235,1)); box-shadow: 0 0 25px rgba(59,130,246,0.6); }
+        .btn-success { background: linear-gradient(135deg, rgba(16,185,129,0.8), rgba(5,150,105,0.9)); color: white; box-shadow: 0 0 15px rgba(16,185,129,0.4); }
+        .btn-success:hover { background: linear-gradient(135deg, rgba(16,185,129,1), rgba(5,150,105,1)); box-shadow: 0 0 25px rgba(16,185,129,0.6); }
+        .btn-danger { background: linear-gradient(135deg, rgba(239,68,68,0.8), rgba(220,38,38,0.9)); color: white; box-shadow: 0 0 15px rgba(239,68,68,0.4); }
+        .btn-danger:hover { background: linear-gradient(135deg, rgba(239,68,68,1), rgba(220,38,38,1)); box-shadow: 0 0 25px rgba(239,68,68,0.6); }
+        .btn-warning { background: linear-gradient(135deg, rgba(245,158,11,0.8), rgba(217,119,6,0.9)); color: white; box-shadow: 0 0 15px rgba(245,158,11,0.4); }
+        .btn-warning:hover { background: linear-gradient(135deg, rgba(245,158,11,1), rgba(217,119,6,1)); box-shadow: 0 0 25px rgba(245,158,11,0.6); }
         .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
 
@@ -2871,7 +2874,8 @@ function mgmtAdminHTML() {
                     document.getElementById('editTelegramId').value = u.telegram_id || '';
                     document.getElementById('editNotes').value = u.notes || '';
                     document.getElementById('editIsFrozen').value = u.is_frozen ? '1' : '0';
-                    const protos = (typeof u.protocols === 'string' ? JSON.parse(u.protocols || '{}') : (u.protocols || {}));
+                    let protos = {};
+                    try { protos = (typeof u.protocols === 'string' && u.protocols.trim() !== '') ? JSON.parse(u.protocols) : (u.protocols || {}); } catch(e) { protos = {}; }
                     document.getElementById('editAntiFilter').value = protos.anti_filter ? '1' : '0';
                     if (u.plan_id) {
                         document.getElementById('editPlan').value = u.plan_id;
@@ -3016,8 +3020,13 @@ function mgmtAdminHTML() {
 
         function hideConfigModal() { document.getElementById('configModal').classList.remove('active'); }
         function copySubConfig() {
-            navigator.clipboard.writeText(document.getElementById('subConfig').textContent);
-            alert('کپی شد!');
+            var text = document.getElementById('subConfig').textContent;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(function(){alert('کپی شد!');}).catch(fallbackCopy);
+            } else { fallbackCopy(); }
+            function fallbackCopy() {
+                var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert('کپی شد!');
+            }
         }
         var _currentCleanIPLinks = [];
         function copyAllConfigs() {
@@ -3237,7 +3246,9 @@ function mgmtAdminHTML() {
                         admin_password: document.getElementById('settingAdminPassword').value || undefined
                     })
                 });
-                alert('تنظیمات ذخیره شد');
+                var pwd = document.getElementById('settingAdminPassword').value;
+                alert(pwd ? 'تنظیمات ذخیره شد. رمز عبور تغییر کرد — لطفاً دوباره وارد شوید.' : 'تنظیمات ذخیره شد');
+                document.getElementById('settingAdminPassword').value = '';
             } catch (e) { alert('خطا در ذخیره'); }
         }
 
