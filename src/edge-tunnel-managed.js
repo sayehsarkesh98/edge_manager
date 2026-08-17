@@ -2488,10 +2488,12 @@ function mgmtAdminHTML() {
                 </div>
             </div>
             <div class="config-box" id="subConfig">-</div>
+            
             <h3 style="margin:1rem 0 0.5rem;color:var(--accent);font-size:0.9rem">🌐 Clean IP ها</h3>
             <div id="cleanIPs" style="max-height:300px;overflow-y:auto"></div>
+            
             <div style="display:flex; gap:0.5rem;margin-top:1rem">
-                <button class="btn btn-primary" onclick="copyAllConfigs()" style="flex:2;background:var(--success)">📋 کپی همه کانفیگ‌ها</button>
+                <button class="btn btn-success" onclick="copyAllConfigs()" style="flex:2">📋 کپی همه کانفیگ‌ها</button>
                 <button class="btn btn-primary" onclick="copySubConfig()" style="flex:1">🔗 کپی لینک</button>
                 <button class="btn btn-danger" onclick="hideConfigModal()" style="flex:1">بستن</button>
             </div>
@@ -3038,20 +3040,24 @@ function mgmtAdminHTML() {
         }
         var _currentCleanIPLinks = [];
         function copyAllConfigs() {
-            if (_currentCleanIPLinks.length === 0) { alert('کانفیگی برای کپی وجود ندارد'); return; }
+            if (!_currentCleanIPLinks || _currentCleanIPLinks.length === 0) { alert('کانفیگی برای کپی وجود ندارد'); return; }
             var allText = _currentCleanIPLinks.join('\\n');
-            navigator.clipboard.writeText(allText).then(function() {
-                alert('✅ ' + _currentCleanIPLinks.length + ' کانفیگ کپی شد!');
-            }).catch(function() {
-                // Fallback
+            var successMsg = '✅ ' + _currentCleanIPLinks.length + ' کانفیگ کپی شد!';
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(allText).then(function() { alert(successMsg); }).catch(function() { fallbackCopy(allText, successMsg); });
+            } else {
+                fallbackCopy(allText, successMsg);
+            }
+            function fallbackCopy(t, msg) {
                 var ta = document.createElement('textarea');
-                ta.value = allText;
+                ta.value = t;
+                ta.style.position = 'fixed';
+                ta.style.top = '-9999px';
                 document.body.appendChild(ta);
                 ta.select();
-                document.execCommand('copy');
+                try { document.execCommand('copy'); alert(msg); } catch (err) { alert('❌ خطا در کپی'); }
                 document.body.removeChild(ta);
-                alert('✅ ' + _currentCleanIPLinks.length + ' کانفیگ کپی شد!');
-            });
+            }
         }
 
         // ============================================
