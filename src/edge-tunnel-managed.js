@@ -2017,7 +2017,7 @@ function mgmtAdminHTML() {
         .btn-warning { background: linear-gradient(135deg, rgba(245,158,11,0.8), rgba(217,119,6,0.9)); color: white; box-shadow: 0 0 15px rgba(245,158,11,0.4); }
         .btn-warning:hover { background: linear-gradient(135deg, rgba(245,158,11,1), rgba(217,119,6,1)); box-shadow: 0 0 25px rgba(245,158,11,0.6); }
         .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+        .btn-outline { background: transparent !important; border: 1px solid var(--border) !important; color: var(--text-primary); }
 
         /* Table */
         .table-container { overflow-x: auto; border-radius: 0.75rem; border: 1px solid var(--border); }
@@ -3007,7 +3007,7 @@ function mgmtAdminHTML() {
                         cleanHTML += '<div style="background:var(--bg-primary);padding:0.5rem;border-radius:0.5rem;margin-bottom:0.5rem">';
                         cleanHTML += '<div style="display:flex;justify-content:space-between;align-items:center">';
                         cleanHTML += '<span style="color:var(--accent);font-weight:600;font-size:0.85rem">' + ip.name + '</span>';
-                        cleanHTML += '<button class="btn btn-sm btn-outline" onclick="navigator.clipboard.writeText(' + "'" + ip.link.replace(/'/g, "\\'") + "'" + ');alert(' + "'" + 'کپی شد!' + "'" + ')">📋</button>';
+                        cleanHTML += '<button class="btn btn-sm btn-outline" onclick="safeCopy(\'' + ip.link.replace(/'/g, "\\'") + '\')">📋</button>';
                         cleanHTML += '</div>';
                         cleanHTML += '<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.25rem">' + ip.note + '</div>';
                         cleanHTML += '<div style="font-family:monospace;font-size:0.65rem;color:var(--text-secondary);word-break:break-all;margin-top:0.25rem;max-height:40px;overflow:hidden">' + ip.link + '</div>';
@@ -3019,6 +3019,14 @@ function mgmtAdminHTML() {
         }
 
         function hideConfigModal() { document.getElementById('configModal').classList.remove('active'); }
+        function safeCopy(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(function(){alert('کپی شد!');}).catch(function(){fallbackCopyText(text);});
+            } else { fallbackCopyText(text); }
+            function fallbackCopyText(t) {
+                var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert('کپی شد!');
+            }
+        }
         function copySubConfig() {
             var text = document.getElementById('subConfig').textContent;
             if (navigator.clipboard && window.isSecureContext) {
