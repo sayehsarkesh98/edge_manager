@@ -2376,9 +2376,10 @@ function mgmtAdminHTML() {
                     <label>آیدی تلگرام</label>
                     <input type="text" id="newTelegramId" placeholder="اختیاری">
                 </div>
-            <div class="form-group">
-                <label>یادداشت</label>
-                <input type="text" id="newNotes">
+                <div class="form-group">
+                    <label>یادداشت</label>
+                    <input type="text" id="newNotes">
+                </div>
             </div>
             <div class="form-group">
                 <label>کانفیگ‌های ضد فیلتر</label>
@@ -3021,43 +3022,41 @@ function mgmtAdminHTML() {
         }
 
         function hideConfigModal() { document.getElementById('configModal').classList.remove('active'); }
-        function safeCopy(text) {
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(function(){alert('کپی شد!');}).catch(function(){fallbackCopyText(text);});
-            } else { fallbackCopyText(text); }
-            function fallbackCopyText(t) {
-                var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert('کپی شد!');
-            }
+        function fallbackCopyText(text, msg) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.top = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); alert(msg); } 
+            catch (err) { alert('❌ خطا در کپی'); }
+            document.body.removeChild(ta);
         }
+
         function copySubConfig() {
             var text = document.getElementById('subConfig').textContent;
+            var msg = '✅ کپی شد!';
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(function(){alert('کپی شد!');}).catch(fallbackCopy);
-            } else { fallbackCopy(); }
-            function fallbackCopy() {
-                var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert('کپی شد!');
-            }
+                navigator.clipboard.writeText(text).then(function(){ alert(msg); }).catch(function(){ fallbackCopyText(text, msg); });
+            } else { fallbackCopyText(text, msg); }
         }
+
+        function safeCopy(text) {
+            var msg = '✅ کپی شد!';
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(function(){ alert(msg); }).catch(function(){ fallbackCopyText(text, msg); });
+            } else { fallbackCopyText(text, msg); }
+        }
+
         var _currentCleanIPLinks = [];
         function copyAllConfigs() {
             if (!_currentCleanIPLinks || _currentCleanIPLinks.length === 0) { alert('کانفیگی برای کپی وجود ندارد'); return; }
             var allText = _currentCleanIPLinks.join('\\n');
-            var successMsg = '✅ ' + _currentCleanIPLinks.length + ' کانفیگ کپی شد!';
+            var msg = '✅ ' + _currentCleanIPLinks.length + ' کانفیگ کپی شد!';
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(allText).then(function() { alert(successMsg); }).catch(function() { fallbackCopy(allText, successMsg); });
-            } else {
-                fallbackCopy(allText, successMsg);
-            }
-            function fallbackCopy(t, msg) {
-                var ta = document.createElement('textarea');
-                ta.value = t;
-                ta.style.position = 'fixed';
-                ta.style.top = '-9999px';
-                document.body.appendChild(ta);
-                ta.select();
-                try { document.execCommand('copy'); alert(msg); } catch (err) { alert('❌ خطا در کپی'); }
-                document.body.removeChild(ta);
-            }
+                navigator.clipboard.writeText(allText).then(function(){ alert(msg); }).catch(function(){ fallbackCopyText(allText, msg); });
+            } else { fallbackCopyText(allText, msg); }
         }
 
         // ============================================
