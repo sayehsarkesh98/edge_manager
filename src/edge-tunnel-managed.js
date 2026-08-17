@@ -1971,7 +1971,9 @@ function mgmtAdminHTML() {
             --border: #334155;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: linear-gradient(135deg, #0f172a, #1e1b4b, #0f172a); background-size: 200% 200%; animation: gradientBG 15s ease infinite; color: var(--text-primary); min-height: 100vh; }
+@keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+.login-form, .panel, .stat, .modal-content, .header, .nav { background: rgba(30, 41, 59, 0.4) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1) !important; }
 
         /* Login */
         .login-box { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -2015,7 +2017,7 @@ function mgmtAdminHTML() {
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
 
         /* Table */
-        .table-container { overflow-x: auto; background: var(--bg-secondary); border-radius: 0.75rem; border: 1px solid var(--border); }
+        .table-container { overflow-x: auto; border-radius: 0.75rem; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 0.75rem; text-align: right; border-bottom: 1px solid var(--border); }
         th { background: var(--bg-primary); color: var(--text-secondary); font-weight: 600; font-size: 0.8rem; }
@@ -2325,6 +2327,10 @@ function mgmtAdminHTML() {
                     <div class="form-group">
                         <label>آیدی ادمین تلگرام</label>
                         <input type="text" id="settingTelegramAdmin" placeholder="Chat ID">
+                    </div>
+                    <div class="form-group">
+                        <label>تغییر رمز عبور ادمین</label>
+                        <input type="password" id="settingAdminPassword" placeholder="رمز عبور جدید (برای عدم تغییر، خالی بگذارید)">
                     </div>
                     <button class="btn btn-primary" onclick="saveSettings()">💾 ذخیره تنظیمات</button>
                 </div>
@@ -3227,7 +3233,8 @@ function mgmtAdminHTML() {
                         traffic_alert_threshold: document.getElementById('settingTrafficAlert').value,
                         expiry_warning_days: document.getElementById('settingExpiryWarning').value,
                         telegram_bot_token: document.getElementById('settingTelegramToken').value,
-                        telegram_admin_id: document.getElementById('settingTelegramAdmin').value
+                        telegram_admin_id: document.getElementById('settingTelegramAdmin').value,
+                        admin_password: document.getElementById('settingAdminPassword').value || undefined
                     })
                 });
                 alert('تنظیمات ذخیره شد');
