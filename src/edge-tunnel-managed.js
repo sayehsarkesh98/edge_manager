@@ -1197,21 +1197,36 @@ async function mgmtTestCleanIP(request, env) {
             try {
                 const headers = {};
                 if (sni) headers['Host'] = sni;
-                const response = await fetch(`https://${ip}:${port}`, {
+                const response = await fetch(`https://${ip}:${port}/`, {
                     method: 'HEAD',
                     headers,
+                    redirect: 'follow',
                     signal: AbortSignal.timeout(5000)
                 });
                 const latency = Date.now() - startTime;
-                let status = 'excellent';
-                if (!response.ok) status = response.status === 403 ? 'good' : 'poor';
-                return { status, latency, httpCode: response.status };
+                if (response.ok) return { status: 'excellent', latency, httpCode: response.status };
+                if (response.status === 403) return { status: 'good', latency, httpCode: response.status };
+                if (response.status === 1003) {
+                    try {
+                        const { connect } = await import('cloudflare:sockets');
+                        const socket = connect({ hostname: ip, port: parseInt(port) });
+                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+                        await Promise.race([socket.opened, timeoutPromise]);
+                        const sockLatency = Date.now() - startTime;
+                        socket.close();
+                        return { status: 'good', latency: sockLatency, httpCode: 200 };
+                    } catch (_) {
+                        return { status: 'poor', latency, httpCode: response.status };
+                    }
+                }
+                return { status: 'poor', latency, httpCode: response.status };
             } catch (e) {
-                if (e.name === 'TimeoutError' || e.code === 'ETIMEDOUT') {
+                const latency = Date.now() - startTime;
+                if (e.name === 'TimeoutError' || e.code === 'ETIMEDOUT' || e.message === 'timeout') {
                     return { status: 'timeout', latency: -1, httpCode: 0 };
                 }
                 if (e.message && (e.message.includes('certificate') || e.message.includes('TLS') || e.message.includes('ssl'))) {
-                    return { status: 'cert_error', latency: Date.now() - startTime, httpCode: 0 };
+                    return { status: 'cert_error', latency, httpCode: 0 };
                 }
                 return { status: 'unreachable', latency: -1, httpCode: 0 };
             }
