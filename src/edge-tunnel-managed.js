@@ -3007,7 +3007,7 @@ function mgmtAdminHTML() {
                         cleanHTML += '<div style="background:var(--bg-primary);padding:0.5rem;border-radius:0.5rem;margin-bottom:0.5rem">';
                         cleanHTML += '<div style="display:flex;justify-content:space-between;align-items:center">';
                         cleanHTML += '<span style="color:var(--accent);font-weight:600;font-size:0.85rem">' + ip.name + '</span>';
-                        cleanHTML += '<button class="btn btn-sm btn-outline" onclick="safeCopy(\'' + ip.link.replace(/'/g, "\\'") + '\')">📋</button>';
+                        cleanHTML += '<button class="btn btn-sm btn-outline" onclick="safeCopy(' + "'" + ip.link.replace(/'/g, "\\'") + "'" + ')">📋</button>';
                         cleanHTML += '</div>';
                         cleanHTML += '<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.25rem">' + ip.note + '</div>';
                         cleanHTML += '<div style="font-family:monospace;font-size:0.65rem;color:var(--text-secondary);word-break:break-all;margin-top:0.25rem;max-height:40px;overflow:hidden">' + ip.link + '</div>';
